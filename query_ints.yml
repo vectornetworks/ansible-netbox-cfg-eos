@@ -1,0 +1,20 @@
+- hosts: all
+  name: Query Netbox Interfaces
+  gather_facts: false
+  become: true
+  vars:
+    nb_api_endpoint: "{{ lookup('ansible.builtin.env', 'NETBOX_URL') }}"
+    nb_api_token: "{{ lookup('ansible.builtin.env', 'NETBOX_API_TOKEN') }}"
+  tasks:
+    - name: Display Hostname
+      debug: 
+        msg: "{{ inventory_hostname }}"
+    - name: Output Interfaces
+      debug: 
+        msg: "{{ item.value.name }}"
+      loop: "{{ query('netbox.netbox.nb_lookup', 'interfaces',
+                      api_endpoint=nb_api_endpoint,
+                      api_filter='device=' ~ inventory_hostname,
+                      token=nb_api_token) }}"
+      loop_control:
+        label: "{{ item.value.name }}"

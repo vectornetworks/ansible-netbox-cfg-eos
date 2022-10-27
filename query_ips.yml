@@ -1,0 +1,18 @@
+- hosts: all
+  name: Query Netbox Interfaces
+  gather_facts: false
+  become: true
+  vars:
+    nb_api_endpoint: "{{ lookup('ansible.builtin.env', 'NETBOX_URL') }}"
+    nb_api_token: "{{ lookup('ansible.builtin.env', 'NETBOX_API_TOKEN') }}"
+    dev_ips: "{{ query('netbox.netbox.nb_lookup', 'ip-addresses',
+                 api_endpoint=nb_api_endpoint,
+                 api_filter='device=' ~ inventory_hostname, 
+                 token=nb_api_token) }}"
+  tasks:
+    - name: Output IP Addresseses
+      debug: 
+        msg: "Device {{ inventory_hostname }} interface {{ item.value.assigned_object.name }} has IP address {{ item.value.address }}"
+      loop: "{{ dev_ips }}"
+      loop_control:
+        label: "{{ inventory_hostname }}/{{ item.value.assigned_object.name }}"

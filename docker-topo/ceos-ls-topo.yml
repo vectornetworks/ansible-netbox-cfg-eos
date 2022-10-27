@@ -1,0 +1,19 @@
+VERSION: 2
+PREFIX: vl 
+CONF_DIR: ./config_base
+CEOS_IMAGE: ceos:latest
+PUBLISH_BASE:
+  22/tcp: 2000
+driver: veth
+
+links:
+  - endpoints: ["ceos-spine-01:eth0", "ceos-spine-02:eth0", "ceos-leaf-01:eth0", "ceos-leaf-02:eth0", "ceos-leaf-03:eth0", "ceos-leaf-04:eth0" ]
+    driver: bridge
+  - endpoints: ["ceos-spine-01:eth1", "ceos-leaf-01:eth1"]
+  - endpoints: ["ceos-spine-01:eth2", "ceos-leaf-02:eth1"]
+  - endpoints: ["ceos-spine-01:eth3", "ceos-leaf-03:eth1"]
+  - endpoints: ["ceos-spine-01:eth4", "ceos-leaf-04:eth1"]
+  - endpoints: ["ceos-spine-02:eth1", "ceos-leaf-01:eth2"]
+  - endpoints: ["ceos-spine-02:eth2", "ceos-leaf-02:eth2"]
+  - endpoints: ["ceos-spine-02:eth3", "ceos-leaf-03:eth2"]
+  - endpoints: ["ceos-spine-02:eth4", "ceos-leaf-04:eth2"]

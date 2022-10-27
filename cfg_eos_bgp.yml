@@ -1,0 +1,39 @@
+- hosts: all
+  name: Configure EOS BGP
+  gather_facts: false
+  become: true
+  vars:
+    nb_api_endpoint: "{{ lookup('ansible.builtin.env', 'NETBOX_URL') }}"
+    nb_api_token: "{{ lookup('ansible.builtin.env', 'NETBOX_API_TOKEN') }}"
+    dev_bgp_sessions: "{{ query('netbox.netbox.nb_lookup', 'session',
+                          api_endpoint=nb_api_endpoint,
+                          plugin='bgp',
+                          api_filter='device=' ~ inventory_hostname,
+                          token=nb_api_token) }}"
+    dev_loopback_address: "{{ query('netbox.netbox.nb_lookup', 'ip-addresses',
+                              api_endpoint=nb_api_endpoint,
+                              api_filter='interface=Loopback0 device=' ~ inventory_hostname, 
+                              token=nb_api_token) }}"
+    bgp_asn: "{{ dev_bgp_sessions[0].value.local_as.asn }}"
+
+  tasks:
+    - name: Configure BGP Router ID and Loopback Networks
+      arista.eos.eos_bgp_global:
+        config:
+          as_number: "{{ bgp_asn }}"
+          router_id: "{{ dev_loopback_address[0].value.address | ansible.netcommon.ipaddr('address')  }}"
+          network:
+            - address: "{{ dev_loopback_address[0].value.address }}" 
+        state: merged
+
+    - name: Configure BGP Neighbors
+      arista.eos.eos_bgp_global:
+        config:
+          as_number: "{{ item.value.local_as.asn }}"
+          neighbor:
+            - neighbor_address: "{{ item.value.remote_address.address | ansible.netcommon.ipaddr('address') }}"
+              remote_as: "{{ item.value.remote_as.asn }}"
+        state: merged
+      loop: "{{ dev_bgp_sessions }}"
+      loop_control: 
+        label: "{{ item.value.name }}"
